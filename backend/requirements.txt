@@ -3,6 +3,8 @@ uvicorn
 gunicorn
 python-dotenv
 openai
+langdetect
+deep-translator
 pinecone
 sentence-transformers
 torch
