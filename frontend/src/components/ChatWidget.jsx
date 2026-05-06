@@ -7,7 +7,7 @@ import { clsx } from 'clsx';
 import { twMerge } from 'tailwind-merge';
 import botIcon from '../assets/bot-icon.png';
 
-const API_URL = window.INKIE_API_URL || 'http://localhost:8000';
+const API_URL = window.INKIE_API_URL || 'http://139.84.194.96:8001';
 
 function cn(...inputs) {
   return twMerge(clsx(inputs));
@@ -292,7 +292,7 @@ const ChatWidget = ({ isDark, toggleTheme }) => {
               </div>
               <div className="flex items-center gap-2 relative z-10">
                 {/* Language Selector Dropdown */}
-                <select 
+                <select
                   value={selectedLanguage}
                   onChange={(e) => setSelectedLanguage(e.target.value)}
                   className="bg-white/10 backdrop-blur-md border border-white/20 rounded-lg px-2 py-1 text-xs text-white focus:outline-none hover:bg-white/20 transition-all cursor-pointer"
@@ -304,7 +304,7 @@ const ChatWidget = ({ isDark, toggleTheme }) => {
                   <option value="ar" className="bg-slate-800 text-white">Arabic</option>
                 </select>
 
-                <motion.button 
+                <motion.button
                   whileHover={{ scale: 1.1, rotate: 180 }}
                   onClick={toggleTheme}
                   title="Toggle Theme"
@@ -424,10 +424,10 @@ const MessageItem = ({ msg, onSuggestionClick, isBotActive }) => {
 
   const formatText = (text) => {
     if (!text) return null;
-    
+
     return text.split('\n').map((line, i) => {
       const trimmedLine = line.trim();
-      
+
       // Handle Bullet Points (supports -, *, •)
       if (trimmedLine.startsWith('-') || trimmedLine.startsWith('*') || trimmedLine.startsWith('•')) {
         const content = trimmedLine.replace(/^[-*•]\s*/, '');
