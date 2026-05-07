@@ -4,6 +4,18 @@ import ChatWidget from './components/ChatWidget';
 import './index.css';
 
 // This script will automatically create a container and mount the chatbot
+const WidgetWrapper = () => {
+  const [isDark, setIsDark] = React.useState(
+    window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches
+  );
+
+  const toggleTheme = () => {
+    setIsDark(prev => !prev);
+  };
+
+  return <ChatWidget isDark={isDark} toggleTheme={toggleTheme} />;
+};
+
 const initChatbot = () => {
   const containerId = 'inkit-chatbot-root';
   let container = document.getElementById(containerId);
@@ -16,12 +28,9 @@ const initChatbot = () => {
 
   const root = ReactDOM.createRoot(container);
   
-  // Default to light mode for the widget unless specified or detected
-  const isDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
-
   root.render(
     <React.StrictMode>
-      <ChatWidget isDark={isDark} toggleTheme={() => {}} />
+      <WidgetWrapper />
     </React.StrictMode>
   );
 };

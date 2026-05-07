@@ -246,7 +246,7 @@ const ChatWidget = ({ isDark, toggleTheme }) => {
   };
 
   return (
-    <div className="fixed bottom-6 right-6 z-50 font-sans">
+    <div className={cn("fixed bottom-6 right-6 z-50 font-sans", isDark && "dark")}>
       <AnimatePresence mode="wait">
         {!isOpen ? (
           <motion.button
