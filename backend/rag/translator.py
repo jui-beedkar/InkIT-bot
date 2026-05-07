@@ -1,5 +1,6 @@
 import logging
 import functools
+# pyrefly: ignore [missing-import]
 from deep_translator import GoogleTranslator
 
 # Setup Logging
