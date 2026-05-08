@@ -7,7 +7,7 @@ import { clsx } from 'clsx';
 import { twMerge } from 'tailwind-merge';
 import botIcon from '../assets/bot-icon.png';
 
-const API_URL = window.INKIE_API_URL || 'http://139.84.194.96:8001';
+const API_URL = window.INKIE_API_URL || 'http://localhost:8000';
 
 function cn(...inputs) {
   return twMerge(clsx(inputs));
@@ -144,15 +144,42 @@ const ChatWidget = ({ isDark, toggleTheme }) => {
     }
   }, [listening]);
 
+  // Diagnostics for speech recognition support
+  useEffect(() => {
+    if (isOpen) {
+      const nativeSupport = !!(window.SpeechRecognition || window.webkitSpeechRecognition);
+      console.log('[Inkie] Speech Diagnostics:', {
+        librarySupported: browserSupportsSpeechRecognition,
+        nativeSupport: nativeSupport,
+        micAvailable: isMicrophoneAvailable,
+        secureContext: window.isSecureContext,
+        protocol: window.location.protocol,
+        hostname: window.location.hostname
+      });
+      
+      if (!window.isSecureContext && window.location.hostname !== 'localhost') {
+        console.warn("[Inkie] Speech recognition is DISABLED because this site is not using HTTPS. Browsers block microphone access on non-secure sites.");
+      }
+    }
+  }, [isOpen, browserSupportsSpeechRecognition, isMicrophoneAvailable]);
+
   const toggleVoiceInput = () => {
-    if (!browserSupportsSpeechRecognition) {
-      setSpeechError("Voice input is not supported in this browser.");
+    const nativeSupport = !!(window.SpeechRecognition || window.webkitSpeechRecognition);
+
+    if (!window.isSecureContext && window.location.hostname !== 'localhost') {
+      setSpeechError("Speech recognition requires a secure connection (HTTPS). Please serve your site over HTTPS.");
+      setSpeechState('error');
+      return;
+    }
+
+    if (!browserSupportsSpeechRecognition && !nativeSupport) {
+      setSpeechError("Your browser doesn't support speech recognition. Please use Chrome, Edge, or Safari.");
       setSpeechState('error');
       return;
     }
 
     if (!isMicrophoneAvailable) {
-      setSpeechError("Microphone access is required. Please enable permissions.");
+      setSpeechError("Microphone access is denied. Please enable it in browser settings.");
       setSpeechState('error');
       return;
     }
@@ -162,11 +189,17 @@ const ChatWidget = ({ isDark, toggleTheme }) => {
     } else {
       setSpeechError(null);
       resetTranscript();
-      SpeechRecognition.startListening({
-        continuous: false,
-        language: LANG_MAP[selectedLanguage] || 'en-US',
-        interimResults: true
-      });
+      try {
+        SpeechRecognition.startListening({
+          continuous: false,
+          language: LANG_MAP[selectedLanguage] || 'en-US',
+          interimResults: true
+        });
+      } catch (err) {
+        console.error("[Inkie] Speech start error:", err);
+        setSpeechError("Could not start speech recognition. Try again.");
+        setSpeechState('error');
+      }
     }
   };
 
@@ -332,7 +365,7 @@ const ChatWidget = ({ isDark, toggleTheme }) => {
             {/* Messages */}
             <div
               ref={scrollRef}
-              className="flex-1 overflow-y-auto p-4 space-y-6 bg-slate-50/50 dark:bg-slate-900/30"
+              className="flex-1 overflow-y-auto p-4 space-y-6 bg-slate-50 dark:bg-slate-950"
             >
               {speechError && (
                 <div className="sticky top-0 z-10 text-center py-2 bg-red-100 dark:bg-red-900/30 text-red-600 dark:text-red-400 text-xs font-medium rounded-lg shadow-sm mb-4 animate-in fade-in slide-in-from-top-2">
@@ -345,7 +378,7 @@ const ChatWidget = ({ isDark, toggleTheme }) => {
               {isTyping && (
                 <div className="flex gap-3">
                   <BotMascot isActive={true} className="w-10 h-10 opacity-70" />
-                  <div className="bg-white dark:bg-slate-800 p-3 rounded-2xl rounded-tl-none shadow-sm flex gap-1 items-center">
+                  <div className="bg-white dark:bg-slate-900 p-3 rounded-2xl rounded-tl-none shadow-sm flex gap-1 items-center">
                     <span className="w-1.5 h-1.5 bg-slate-400 rounded-full animate-bounce" style={{ animationDelay: '0ms' }} />
                     <span className="w-1.5 h-1.5 bg-slate-400 rounded-full animate-bounce" style={{ animationDelay: '200ms' }} />
                     <span className="w-1.5 h-1.5 bg-slate-400 rounded-full animate-bounce" style={{ animationDelay: '400ms' }} />
@@ -355,10 +388,10 @@ const ChatWidget = ({ isDark, toggleTheme }) => {
             </div>
 
             {/* Input Area */}
-            <div className="p-4 bg-white dark:bg-slate-900 border-t border-slate-100 dark:border-slate-800">
+            <div className="p-4 bg-white dark:bg-slate-950 border-t border-slate-100 dark:border-slate-800">
               <form
                 onSubmit={(e) => { e.preventDefault(); handleSend(); }}
-                className="flex items-center gap-2 bg-slate-100 dark:bg-slate-800 p-3 rounded-2xl border border-transparent focus-within:border-primary/30 focus-within:bg-white dark:focus-within:bg-slate-950 transition-all duration-300"
+                className="flex items-center gap-2 bg-slate-100 dark:bg-slate-900 p-3 rounded-2xl border border-transparent focus-within:border-primary/30 focus-within:bg-white dark:focus-within:bg-slate-950 transition-all duration-300"
               >
                 <input
                   value={listening ? (transcript || 'Listening...') : input}
@@ -472,7 +505,7 @@ const MessageItem = ({ msg, onSuggestionClick, isBotActive }) => {
         <div className={cn(
           "p-4 rounded-2xl shadow-sm text-base leading-relaxed",
           isBot
-            ? "bg-white dark:bg-slate-800 rounded-tl-none text-slate-700 dark:text-slate-200 border border-slate-100 dark:border-slate-700"
+            ? "bg-white dark:bg-slate-900 rounded-tl-none text-slate-700 dark:text-slate-200 border border-slate-100 dark:border-slate-800"
             : "bg-primary text-white rounded-tr-none"
         )}>
           {formatText(msg.text)}
@@ -520,7 +553,7 @@ const MessageItem = ({ msg, onSuggestionClick, isBotActive }) => {
                 whileHover={{ scale: 1.05, backgroundColor: 'var(--color-primary-dark)', color: 'white' }}
                 whileTap={{ scale: 0.95 }}
                 onClick={() => onSuggestionClick(s)}
-                className="text-xs py-2 px-4 rounded-full border border-primary/30 text-primary transition-all duration-300 bg-white/50 dark:bg-slate-800/50 backdrop-blur-sm font-medium"
+                className="text-xs py-2 px-4 rounded-full border border-primary/30 text-primary transition-all duration-300 bg-white dark:bg-slate-900 backdrop-blur-sm font-medium"
               >
                 {s}
               </motion.button>
