@@ -7,7 +7,7 @@ import { clsx } from 'clsx';
 import { twMerge } from 'tailwind-merge';
 import botIcon from '../assets/bot-icon.png';
 
-const API_URL = window.INKIE_API_URL || 'http://localhost:8000';
+const API_URL = window.INKIE_API_URL || 'http://127.0.0.1:8000';
 
 function cn(...inputs) {
   return twMerge(clsx(inputs));
@@ -60,6 +60,7 @@ const ChatWidget = ({ isDark, toggleTheme }) => {
   const [userName, setUserName] = useState(null);
   const [userCountry, setUserCountry] = useState(null);
   const [selectedLanguage, setSelectedLanguage] = useState('en');
+  const [backendStatus, setBackendStatus] = useState('checking'); // 'online', 'offline', 'checking'
 
   const [lastDocUrl, setLastDocUrl] = useState(null);
   const [chatStage, setChatStage] = useState('ask_name');
@@ -156,12 +157,34 @@ const ChatWidget = ({ isDark, toggleTheme }) => {
         protocol: window.location.protocol,
         hostname: window.location.hostname
       });
-      
+
       if (!window.isSecureContext && window.location.hostname !== 'localhost') {
         console.warn("[Inkie] Speech recognition is DISABLED because this site is not using HTTPS. Browsers block microphone access on non-secure sites.");
       }
     }
   }, [isOpen, browserSupportsSpeechRecognition, isMicrophoneAvailable]);
+
+  // Backend Health Check
+  useEffect(() => {
+    const checkHealth = async () => {
+      try {
+        const response = await axios.get(`${API_URL}/`);
+        if (response.data.status === 'online') {
+          setBackendStatus('online');
+        } else {
+          setBackendStatus('offline');
+        }
+      } catch (err) {
+        console.error("[Inkie] Backend health check failed:", err);
+        setBackendStatus('offline');
+      }
+    };
+
+    checkHealth();
+    // Check every 30 seconds
+    const interval = setInterval(checkHealth, 30000);
+    return () => clearInterval(interval);
+  }, []);
 
   const toggleVoiceInput = () => {
     const nativeSupport = !!(window.SpeechRecognition || window.webkitSpeechRecognition);
@@ -317,9 +340,13 @@ const ChatWidget = ({ isDark, toggleTheme }) => {
                   <div className="flex items-center gap-2">
                     <span className={cn(
                       "w-2.5 h-2.5 rounded-full",
-                      (isBotActive || speechState === 'listening') ? "bg-green-400 animate-pulse" : "bg-slate-300"
+                      backendStatus === 'online' ? "bg-green-400 animate-pulse" :
+                        backendStatus === 'offline' ? "bg-red-500" : "bg-slate-400"
                     )} />
-                    <span className="text-sm text-white/80">{(isBotActive || speechState === 'listening') ? 'Active Now' : 'Online'}</span>
+                    <span className="text-sm text-white/80">
+                      {backendStatus === 'online' ? 'Online' :
+                        backendStatus === 'offline' ? 'Offline' : 'Checking...'}
+                    </span>
                   </div>
                 </div>
               </div>

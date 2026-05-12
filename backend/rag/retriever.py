@@ -53,8 +53,8 @@ def retrieve_documents(query):
         url = metadata.get("url", "").strip()
         title = metadata.get("title", "INK IT Solutions").strip()
 
-        # Threshold calibrated for website content (0.38 is good for granular chunks)
-        if content and url and score >= 0.38:
+        # Threshold calibrated for website content (0.55 is strict for enterprise RAG)
+        if content and url and score >= 0.55:
             matches.append({
                 "content": content,
                 "url": url,
